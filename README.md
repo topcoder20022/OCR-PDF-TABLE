@@ -27,19 +27,27 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   You can check the parameters here.
   https://pdf2image.readthedocs.io/en/latest/reference.html
   Then, run this command in project root dirctory
-  >>python pdf_img.py
+  ```
+  python pdf_img.py
+  ```
   Extracted JPG files are stored in "pdf_img" folder
 
 - Extract boxes by border
-  >>python focus_border.py
+  ```
+  python focus_border.py
+  ``` 
   The result is stored in "focus_border_Images" folder
 
 - Extract boxes by text
-  >>python focus_text.py
+  ```
+  python focus_text.py
+  ``` 
   The result is stored in "focus_text_Images
 
 * You can get the final result by running only below command after running pdf_img.py
-  >>python ocr_border.py
+  ```
+  python ocr_border.py
+  ``` 
   This script extracts the boxes by border and get the OCR result by pytesseract
   The results are stored in "output_img" folder and "table_1.csv" file.
 
@@ -60,6 +68,6 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
 
 I would be happy if this project was helpful to your startup project. :)
 Don't forget to give me a star and donate to me for further development.
-BTC: bc1qgxx5ewtflkq30hmzgjh7qk7egyrjt3tvnn6w2d
-ETH: 0x83e6FD73065F352264EC1a871027223732F87315
+- BTC: bc1qgxx5ewtflkq30hmzgjh7qk7egyrjt3tvnn6w2d
+- ETH: 0x83e6FD73065F352264EC1a871027223732F87315
   
