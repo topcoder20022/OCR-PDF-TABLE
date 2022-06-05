@@ -9,6 +9,8 @@ It was tested on Window and is using multi-threading on 2 stages to speed up.
   - Extract JPGs from pdf
   - Extract data from JPG
 
+Please give me star if this project was helpful to your startup project. :)
+
 # Dependencies
 poppler-0.68.0
 Anaconda3-2020.11-Windows-x86_64.exe
@@ -38,9 +40,9 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   ``` 
   The result is stored in "focus_border_Images" folder
   ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/h_16540011586530001-03.jpg)
- ![]( https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/v_16540011586530001-03.jpg)
+  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/v_16540011586530001-03.jpg)
   ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/f_16540011586530001-03.jpg)
-  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/g_16540011586530001-03.jpg)
+  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/cc_16540011586530001-03.jpg)
 
 - Extract boxes by text
   ```
@@ -56,8 +58,9 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   The results are stored in "output_img" folder and "table_1.csv" file.
 
 # Result Description
+  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/table_1.jpg)
   In this project, I used the table that has 7 columns
-  First, Fourth, and Fifth columns can't be recognized by pytesseract.
+  1, 4, and 5 columns can't be recognized by pytesseract.
   The boxes of these columns are stored in "output_img" folder as JPG and added their file name to csv file.
   You can check example of "output_img" folder here.
   https://drive.google.com/drive/folders/1nrns5zZkzfVP9o8aCyjkj9O4O-TwJAvP?usp=sharing
@@ -70,8 +73,11 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   - Improve accuracy
   - Extract data from any table.
 
-I would be happy if this project was helpful to your startup project. :)
-Don't forget to give me a star and donate to me for further development.
-- BTC: bc1qgxx5ewtflkq30hmzgjh7qk7egyrjt3tvnn6w2d
-- ETH: 0x83e6FD73065F352264EC1a871027223732F87315
+# Version
+1.0.2
+
+Please give me star if this project was helpful to your startup project. :)
+
+
+
   

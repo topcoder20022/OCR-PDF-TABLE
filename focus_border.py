@@ -14,11 +14,15 @@ out_csv = "table_1.csv"
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 def img_preprocessing(img):
-    resizeimg = cv2.resize(img, None, fx=1.5, fy=1.2)
+    time_str = str(int(round(time.time() * 1000)))
+    w_filename = time_str + ".jpg"
+    resizeimg = cv2.resize(img, None, fx=1.5, fy=1.6)
     kernel = np.ones((3, 3), np.uint8)
-    erodeimg = cv2.erode(resizeimg, kernel, iterations=3)
+    erodeimg = cv2.erode(resizeimg, kernel, iterations=2)
     dilateimg = cv2.dilate(erodeimg, kernel, iterations=2)
+    dilateimg = cv2.cvtColor(dilateimg, cv2.COLOR_BGR2GRAY)
     blur_img = cv2.threshold(cv2.medianBlur(dilateimg, 3), 100, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    # cv2.imwrite("output_img1/" + w_filename, resizeimg)
     return blur_img
 
 
@@ -71,10 +75,25 @@ def draw_green_line(img):
         y2 = int(ln[0][3])
 
         cv2.line(img_cpy, pt1=(x1, y1), pt2=(x2, y2),
-                color=(0, 255, 0), thickness=5)
+                color=(0, 0, 0), thickness=5)
 
         # print("Coords: ({}, {})->({}, {})".format(x1, y1, x2, y2))
     return img_cpy
+
+
+def h_remove_cnts(image):
+    mask = np.ones(image.shape[:2], dtype="uint8") * 255
+    contours, hierarchy = cv2.findContours(
+        image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        box_info = [x, y, w, h]
+        # print(box_info)
+        if w < 2640:
+            cv2.drawContours(mask, [cnt], -1, 0, -1)
+    image = cv2.bitwise_and(image, image, mask=mask)
+    # cv2.imwrite("focus_border_Images/v.jpg", image)
+    return image
 
 
 #Functon for extracting the box
@@ -110,26 +129,109 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
 
     # Morphological operation to detect verticle lines from an image
     img_temp1 = cv2.erode(img_bin, verticle_kernel, iterations=2)
-    verticle_lines_img = cv2.dilate(img_temp1, verticle_kernel, iterations=3)
-    v_file_name = "v_" + filename_no_folder + ".jpg"
-    cv2.imwrite(folder + v_file_name, verticle_lines_img)
+    verticle_lines_img = cv2.dilate(img_temp1, verticle_kernel, iterations=8)
+    verticle_lines_img = cv2.erode(verticle_lines_img, verticle_kernel, iterations=2)
+    # v_file_name = "v_" + filename_no_folder + ".jpg"
+    # cv2.imwrite(folder + v_file_name, verticle_lines_img)
 
     # Morphological operation to detect horizontal lines from an image
     img_temp2 = cv2.erode(img_bin, hori_kernel, iterations=2)
-    horizontal_lines_img = cv2.dilate(img_temp2, hori_kernel, iterations=3)
-    h_file_name = "h_" + filename_no_folder + ".jpg"
-    cv2.imwrite(folder + h_file_name, horizontal_lines_img)
+    horizontal_lines_img = cv2.dilate(img_temp2, hori_kernel, iterations=8)
+    horizontal_lines_img = cv2.erode(horizontal_lines_img, hori_kernel, iterations=2)
+    # h_file_name = "h_" + filename_no_folder + ".jpg"
+    # cv2.imwrite(folder + h_file_name, horizontal_lines_img)
+    
+    h_cnts_img = h_remove_cnts(horizontal_lines_img)
 
     # Weighting parameters, this will decide the quantity of an image to be added to make a new image.
     alpha = 0.5
     beta = 1.0 - alpha
 
     # This function helps to add two image with specific weight parameter to get a third image as summation of two image.
-    img_final_bin = cv2.addWeighted(verticle_lines_img, alpha, horizontal_lines_img, beta, 0.0)
+    img_final_bin = cv2.addWeighted(verticle_lines_img, alpha, h_cnts_img, beta, 0.0)
     img_final_bin = cv2.erode(~img_final_bin, kernel, iterations=2)
     (thresh, img_final_bin) = cv2.threshold(img_final_bin, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    f_file_name = "f_" + filename_no_folder + ".jpg"
-    cv2.imwrite(folder + f_file_name, img_final_bin)
+    # f_file_name = "f_" + filename_no_folder + ".jpg"
+    # cv2.imwrite(folder + f_file_name, img_final_bin)
+
+    # Find contours for image, which will detect all the boxes
+    contours, hierarchy = cv2.findContours(
+        img_final_bin, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # Sort all the contours by top to bottom.
+    (contours, boundingBoxes) = sort_contours(contours, method="top-to-bottom")
+
+    ## Find suitable boxes
+    boxes = []
+    xx = []
+    yy = []
+    ww = []
+    hh = []
+    areaa = []
+    for c in contours:
+        # Returns the location and width,height for every contour
+        x, y, w, h = cv2.boundingRect(c)
+        area = w * h
+        box_info = [x, y, w, h, area]
+        # Filtering Boxes
+        if x > 25 and x < 2450 and (x + w) < 2610 and y > 50 and w > 80 and h > 60 and w < 1000 and h < 200:
+            boxes.append(box_info)
+                
+    ## Sort boxes by y
+    boxes_sorted_y = sorted(boxes, key=lambda x: x[1])
+
+    ## Sort boxes by x and make rows
+    i = 1
+    columns = []
+    row_columns = []
+    for box in boxes_sorted_y:
+        columns.append(box)
+        if i % 7 == 0:
+            boxes_sorted_x = sorted(columns, key=lambda x: x[0])
+            row_columns.append(boxes_sorted_x)
+            columns = []
+        i += 1
+
+    idx = 0
+    csv_row_col = []
+    col = 0
+    for columns in row_columns:
+        csv_cols = []
+        if col == 0:
+            row = 0
+            for box in columns:
+                idx += 1
+                new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
+                time_str = str(int(round(time.time() * 1000)))
+                w_filename = cropped_dir_path+filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png'
+                cv2.imwrite(w_filename, new_img)
+                # csv_cols.append(filename_no_xtensn+ '_' +time_str+ '_' +str(idx) + '.png')
+                row += 1
+        else:
+            row = 0
+            for box in columns:
+                if row  == 0 or row == 3 or row == 4:
+                    idx += 1
+                    new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
+                    time_str = str(int(round(time.time() * 1000)))
+                    w_filename = cropped_dir_path+filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png'
+                    cv2.imwrite(w_filename, new_img)
+                    csv_cols.append(filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png')
+                else:
+                    idx += 1
+                    new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
+                    thresh = img_preprocessing(new_img)
+                    data_t = pytesseract.image_to_string(thresh, lang='eng',config='--psm 6 outputbase digits')
+                    data = data_t.split("\n")[0]
+                    csv_cols.append(data)
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(img1, data, (box[0],box[1]), font, 2, (0, 255, 0), 2, cv2.LINE_AA)
+                row += 1
+        csv_row_col.append(csv_cols)
+        col += 1
+
+    with open(out_csv, 'a', newline='') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerows(csv_row_col)  #considering my_list is a list of lists.
 
 def processing(threadID, files):
     for filename in files:
