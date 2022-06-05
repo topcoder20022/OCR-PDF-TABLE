@@ -45,7 +45,8 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   ```
   python focus_text.py
   ``` 
-  The result is stored in "focus_text_Images
+  The result is stored in "focus_text_Images" folder
+  
   ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_text_Images/result_16540011586530001-03.jpg)
 * You can get the final result by running only below command after running pdf_img.py
   ```
