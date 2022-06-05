@@ -39,10 +39,7 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   python focus_border.py
   ``` 
   The result is stored in "focus_border_Images" folder
-  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/h_16540011586530001-03.jpg)
-  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/v_16540011586530001-03.jpg)
-  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/f_16540011586530001-03.jpg)
-  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_Images/cc_16540011586530001-03.jpg)
+  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_img.jpg)
 
 - Extract boxes by text
   ```
