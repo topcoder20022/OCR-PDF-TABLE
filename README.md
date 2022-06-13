@@ -40,6 +40,7 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   ``` 
   The result is stored in "focus_border_Images" folder
   ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_img.jpg)
+  ![](https://github.com/topcoder20022/OCR-PDF-TABLE/blob/master/focus_border_images.png)
 
 - Extract boxes by text
   ```
@@ -67,7 +68,7 @@ tesseract-ocr-w64-setup-v5.1.0.20220510.exe
   I attached example "output_img" folder and "table_1.csv"
 
 # Futher development
-  - development of ocr_text.py based on text of table.
+  - Development of ocr_text.py based on text of table.
   - Improve accuracy
   - Extract data from any table.
 

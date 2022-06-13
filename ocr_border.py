@@ -22,7 +22,7 @@ def img_preprocessing(img):
     dilateimg = cv2.dilate(erodeimg, kernel, iterations=2)
     dilateimg = cv2.cvtColor(dilateimg, cv2.COLOR_BGR2GRAY)
     blur_img = cv2.threshold(cv2.medianBlur(dilateimg, 3), 100, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    # cv2.imwrite("output_img1/" + w_filename, resizeimg)
+    cv2.imwrite("output_img1/" + w_filename, blur_img)
     return blur_img
 
 
@@ -77,8 +77,40 @@ def draw_green_line(img):
         cv2.line(img_cpy, pt1=(x1, y1), pt2=(x2, y2),
                 color=(0, 0, 0), thickness=5)
 
-        # print("Coords: ({}, {})->({}, {})".format(x1, y1, x2, y2))
     return img_cpy
+
+
+def v_remove_cnts(image):
+    mask = np.ones(image.shape[:2], dtype="uint8") * 255
+    contours, hierarchy = cv2.findContours(
+        image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    h_arr = []
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        h_arr.append(h)
+    mode_h = (max(set(h_arr), key = h_arr.count))
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        h_arr.append(h)
+        if h < mode_h - 50:
+            cv2.drawContours(mask, [cnt], -1, 0, -1)
+
+    image = cv2.bitwise_and(image, image, mask=mask)
+    cv2.imwrite("focus_border_Images/h.jpg", image)
+    return image
+
+
+def h_remove_cnts(image):
+    mask = np.ones(image.shape[:2], dtype="uint8") * 255
+    contours, hierarchy = cv2.findContours(
+        image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        box_info = [x, y, w, h]
+        if w < 2640:
+            cv2.drawContours(mask, [cnt], -1, 0, -1)
+    image = cv2.bitwise_and(image, image, mask=mask)
+    return image
 
 
 #Functon for extracting the box
@@ -88,10 +120,6 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
     img = cv2.imread(img_for_box_extraction_path)  # Read the image
     img1 = cv2.imread(img_for_box_extraction_path)  # Read the image
     img1 = draw_green_line(img1)
-    time_str = str(int(round(time.time() * 1000)))
-    folder = "focus_border_Images/"
-    g_file_name = "g_" + filename_no_folder + ".jpg"
-    # cv2.imwrite(folder + g_file_name, img1)
 
     Cimg_gray_para = [3, 3, 0]
     Cimg_blur_para = [150, 255]
@@ -114,26 +142,28 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
 
     # Morphological operation to detect verticle lines from an image
     img_temp1 = cv2.erode(img_bin, verticle_kernel, iterations=2)
-    verticle_lines_img = cv2.dilate(img_temp1, verticle_kernel, iterations=3)
-    v_file_name = "v_" + filename_no_folder + ".jpg"
-    # cv2.imwrite(folder + v_file_name, verticle_lines_img)
+    verticle_lines_img = cv2.dilate(img_temp1, verticle_kernel, iterations=8)
+    verticle_lines_img = cv2.erode(verticle_lines_img, verticle_kernel, iterations=2)
+
+    # Find valid cnts
+    v_cnts_img = v_remove_cnts(verticle_lines_img)
 
     # Morphological operation to detect horizontal lines from an image
     img_temp2 = cv2.erode(img_bin, hori_kernel, iterations=2)
-    horizontal_lines_img = cv2.dilate(img_temp2, hori_kernel, iterations=3)
-    h_file_name = "h_" + filename_no_folder + ".jpg"
-    # cv2.imwrite(folder + h_file_name, horizontal_lines_img)
+    horizontal_lines_img = cv2.dilate(img_temp2, hori_kernel, iterations=8)
+    horizontal_lines_img = cv2.erode(horizontal_lines_img, hori_kernel, iterations=2)
+    
+    # Find valid cnts
+    h_cnts_img = h_remove_cnts(horizontal_lines_img)
 
     # Weighting parameters, this will decide the quantity of an image to be added to make a new image.
     alpha = 0.5
     beta = 1.0 - alpha
 
     # This function helps to add two image with specific weight parameter to get a third image as summation of two image.
-    img_final_bin = cv2.addWeighted(verticle_lines_img, alpha, horizontal_lines_img, beta, 0.0)
+    img_final_bin = cv2.addWeighted(v_cnts_img, alpha, h_cnts_img, beta, 0.0)
     img_final_bin = cv2.erode(~img_final_bin, kernel, iterations=2)
     (thresh, img_final_bin) = cv2.threshold(img_final_bin, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    f_file_name = "f_" + filename_no_folder + ".jpg"
-    # cv2.imwrite(folder + f_file_name, img_final_bin)
 
     # Find contours for image, which will detect all the boxes
     contours, hierarchy = cv2.findContours(
@@ -153,10 +183,10 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
         x, y, w, h = cv2.boundingRect(c)
         area = w * h
         box_info = [x, y, w, h, area]
-        if w > 60 and h > 60 and w < 1000 and h < 200:
+        # print(box_info)
+        if x > 25 and x < 2450 and (x + w) < 2610 and y > 50 and w > 76 and h > 60 and w < 1000 and h < 200:
+            image = cv2.rectangle(img1, (x, y), (x+w, y+h),(0, 255, 0), 5)
             boxes.append(box_info)
-            
-    ## Sort boxes by y
     boxes_sorted_y = sorted(boxes, key=lambda x: x[1])
 
     ## Sort boxes by x and make rows
@@ -182,7 +212,13 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
                 idx += 1
                 new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
                 time_str = str(int(round(time.time() * 1000)))
-                w_filename = cropped_dir_path+filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png'
+                # w_filename = cropped_dir_path+filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png'
+                if row == 0:
+                    w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Address.png'
+                if row == 3:
+                    w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Guardian.png'
+                if row == 4:
+                    w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Name.png'
                 cv2.imwrite(w_filename, new_img)
                 # csv_cols.append(filename_no_xtensn+ '_' +time_str+ '_' +str(idx) + '.png')
                 row += 1
@@ -192,10 +228,14 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
                 if row  == 0 or row == 3 or row == 4:
                     idx += 1
                     new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
-                    time_str = str(int(round(time.time() * 1000)))
-                    w_filename = cropped_dir_path+filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png'
+                    if row == 0:
+                        w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Address.png'
+                    if row == 3:
+                        w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Guardian.png'
+                    if row == 4:
+                        w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Name.png'
                     cv2.imwrite(w_filename, new_img)
-                    csv_cols.append(filename_no_folder+ '_' +time_str+ '_' +str(idx) + '.png')
+                    csv_cols.append(w_filename.split(cropped_dir_path)[1])
                 else:
                     idx += 1
                     new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
@@ -206,6 +246,8 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(img1, data, (box[0],box[1]), font, 2, (0, 255, 0), 2, cv2.LINE_AA)
                 row += 1
+            # Add page number to last column
+            csv_cols.append(filename_no_folder.split("-")[1].split(".")[0])
         csv_row_col.append(csv_cols)
         col += 1
 

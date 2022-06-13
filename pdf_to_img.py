@@ -10,7 +10,7 @@ jpegopt={
 time_str = str(int(round(time.time() * 1000)))
 
 print("Loading PDF file...")
-convert_from_path("1-50.pdf",
+convert_from_path("shamaryati code 259200305.pdf",
     dpi=320,
     output_folder="pdf_img/",
     first_page=3,
