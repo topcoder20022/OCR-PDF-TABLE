@@ -225,6 +225,7 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
         else:
             row = 0
             for box in columns:
+                # Process Arabic text boxes
                 if row  == 0 or row == 3 or row == 4:
                     idx += 1
                     new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
@@ -236,6 +237,8 @@ def box_extraction(img_for_box_extraction_path, cropped_dir_path):
                         w_filename = cropped_dir_path+filename_no_folder+ '_' +str(idx) +'_Name.png'
                     cv2.imwrite(w_filename, new_img)
                     csv_cols.append(w_filename.split(cropped_dir_path)[1])
+                
+                # Process Digit boxes
                 else:
                     idx += 1
                     new_img = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
